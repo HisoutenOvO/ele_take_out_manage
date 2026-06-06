@@ -270,8 +270,8 @@ onMounted(() => {
       <el-table-column prop="special" label="特色" width="120" align="center" />
       <el-table-column label="营业状态" width="100" align="center">
         <template #default="scope">
-          <el-tag v-if="scope.row.status === 1" type="success">营业中</el-tag>
-          <el-tag v-else type="info">闭店中</el-tag>
+          <span v-if="scope.row.status === 1">营业中</span>
+          <span v-else>闭店中</span>
         </template>
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="140" align="center" />

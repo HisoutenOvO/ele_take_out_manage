@@ -15,6 +15,14 @@ export const updateApi = (id,shop) =>request.put(`/admin/shops/${id}`,shop)
 //删除商家
 export const deleteApi = (ids) =>request.delete('/admin/shops',{data:ids})
 
+/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+// 获取当前商家信息
+export const getShopInfo = () => request.get('/shop/shops/info')
+
+// 修改商家信息
+export const updateShopInfo = (data) => request.put('/shop/shops/info', data)
+
 
 
 
