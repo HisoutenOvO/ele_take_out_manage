@@ -61,7 +61,6 @@ const clear = () => {
       <!-- 标题 -->
       <p class="title">饿了么外卖管理系统</p>
 
-      <!-- 苹果风切换开关 -->
       <div class="switch-wrapper">
         <span :class="{ active: loginType === 'admin' }">管理员</span>
         <label class="switch">
