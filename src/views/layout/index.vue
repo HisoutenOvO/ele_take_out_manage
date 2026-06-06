@@ -1,20 +1,22 @@
 <!-- eslint-disable vue/no-reserved-component-names -->
 <script setup lang="js">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { updateShopInfo } from '@/api/shop'
+import { adminChangePasswordApi, shopChangePasswordApi } from '@/api/login'
+const router = useRouter()
+
+// 当前登录角色
+const role = ref(localStorage.getItem('role') || 'admin')
 
 // 修改密码弹窗
 const passwordDialogVisible = ref(false)
-
-// 表单数据
 const passwordForm = ref({
   oldPassword: '',
   newPassword: '',
   confirmPassword: ''
 })
 
-// 表单校验规则
 const passwordRules = ref({
   oldPassword: [
     { required: true, message: '请输入旧密码', trigger: 'blur' },
@@ -51,18 +53,12 @@ const passwordRules = ref({
 
 const passwordFormRef = ref(null)
 
-// 打开修改密码弹窗
 const openPasswordDialog = () => {
-  passwordForm.value = {
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  }
+  passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
   passwordFormRef.value?.clearValidate()
   passwordDialogVisible.value = true
 }
 
-// 提交修改密码
 const handleChangePassword = async () => {
   if (!passwordFormRef.value) return
   passwordFormRef.value.validate(async (valid) => {
@@ -70,26 +66,38 @@ const handleChangePassword = async () => {
       ElMessage.error('请正确填写表单')
       return
     }
-    // 调用修改商家信息接口，只传密码字段
-    const result = await updateShopInfo({
-      oldPassword: passwordForm.value.oldPassword,
-      password: passwordForm.value.newPassword
-    })
+
+    let result
+    const role = localStorage.getItem('role')
+
+    if (role === 'admin') {
+      result = await adminChangePasswordApi({
+        oldPassword: passwordForm.value.oldPassword,
+        password: passwordForm.value.newPassword
+      })
+    } else {
+      result = await shopChangePasswordApi({
+        oldPassword: passwordForm.value.oldPassword,
+        password: passwordForm.value.newPassword
+      })
+    }
+
     if (result.code === 200) {
       ElMessage.success('密码修改成功，请重新登录')
       passwordDialogVisible.value = false
-      // 清除 token，跳转到登录页
-      localStorage.removeItem('adminToken')
+      localStorage.removeItem('token')
+      localStorage.removeItem('role')
       router.push('/login')
     } else {
-      ElMessage.error(result.message || '密码修改失败')
+      ElMessage.error(result.msg)
     }
   })
 }
 
-// 退出登录
 const handleLogout = () => {
   localStorage.removeItem('adminToken')
+  localStorage.removeItem('token')
+  localStorage.removeItem('role')
   router.push('/login')
 }
 </script>
@@ -110,29 +118,36 @@ const handleLogout = () => {
         <!-- 侧边栏 -->
         <el-aside width="200px" class="aside">
           <el-menu class="el-menu" :router="true">
-            <el-menu-item index="/shopDetail">
-              <template #title>
-                <el-icon><HomeFilled /></el-icon>店铺信息
-              </template>
-            </el-menu-item>
-            <el-sub-menu index="1">
-              <template #title>
-                <el-icon><Shop /></el-icon>店铺管理
-              </template>
-              <el-menu-item index="/category">分类管理</el-menu-item>
-              <el-menu-item index="/dish">菜品管理</el-menu-item>
-              <el-menu-item index="/orders">订单管理</el-menu-item>
-            </el-sub-menu>
-            <el-sub-menu index="2">
-              <template #title>
-                <el-icon><setting /></el-icon>管理员管理
-              </template>
-              <el-menu-item index="/shop">商家管理</el-menu-item>
-            </el-sub-menu>
+            <!-- 商家端可见 -->
+            <template v-if="role === 'shop'">
+              <el-menu-item index="/shopDetail">
+                <template #title>
+                  <el-icon><HomeFilled /></el-icon>店铺信息
+                </template>
+              </el-menu-item>
+              <el-sub-menu index="1">
+                <template #title>
+                  <el-icon><Shop /></el-icon>店铺管理
+                </template>
+                <el-menu-item index="/category">分类管理</el-menu-item>
+                <el-menu-item index="/dish">菜品管理</el-menu-item>
+                <el-menu-item index="/orders">订单管理</el-menu-item>
+              </el-sub-menu>
+            </template>
+
+            <!-- 管理员端可见 -->
+            <template v-if="role === 'admin'">
+              <el-sub-menu index="2">
+                <template #title>
+                  <el-icon><setting /></el-icon>管理员管理
+                </template>
+                <el-menu-item index="/shop">商家管理</el-menu-item>
+              </el-sub-menu>
+            </template>
           </el-menu>
         </el-aside>
 
-        <!-- 右侧主体（只有这里滚动） -->
+        <!-- 右侧主体 -->
         <el-main style="overflow-y: auto;">
           <router-view></router-view>
         </el-main>
